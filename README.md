@@ -1,5 +1,7 @@
 # Horse Racing Game
 
+**Live Demo:** [https://insider-horse-racing.netlify.app/](https://insider-horse-racing.netlify.app/)
+
 A modern, interactive horse racing simulation built with Vue 3 and Vite. This project demonstrates component-based architecture, state management with Vuex, and modern testing practices using Vitest and Playwright.
 
 ## Table of Contents
@@ -28,6 +30,8 @@ horse-racing-game/
 ├── public/                # Static assets (e.g., icons)
 ├── src/
 │   ├── assets/            # Images and SVGs
+│   ├── __tests__/         # Unit tests
+│   ├── e2e/               # e2e tests
 │   ├── components/        # Reusable Vue components
 │   │   └── race-track/    # Race track and horse display components
 │   ├── constants/         # App-wide constants
@@ -37,7 +41,6 @@ horse-racing-game/
 │   ├── views/             # Main app views/pages (e.g., HomePage)
 │   ├── style.css          # Global styles
 │   └── main.ts            # App entry point
-├── tests/                 # Additional test files
 ├── package.json           # Project metadata and scripts
 ├── vite.config.js         # Vite configuration
 ├── vitest.config.ts       # Vitest configuration
