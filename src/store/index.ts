@@ -78,7 +78,10 @@ const storeOptions = {
       state.currentRoundIndex = 0;
       state.roundResults = [];
       state.raceStatus = 'idle';
-      this.clearTimer(state);
+      if (state.timerId !== null) {
+        clearInterval(state.timerId);
+        state.timerId = null;
+      }
     }
   },
   actions: {
@@ -177,5 +180,7 @@ const storeOptions = {
     }
   }
 };
+
+export { storeOptions };
 
 export default createStore(storeOptions); 

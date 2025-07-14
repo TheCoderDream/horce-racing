@@ -13,7 +13,7 @@
         </div>
         <div class="result-table">
           <h3>Results</h3>
-          <BaseTable v-if="resultRowsList[idx]" :columns="columns" :rows="resultRowsList[idx]">
+          <BaseTable v-if="resultRowsList[idx]" :columns="PROGRAMMED_SCHEDULE_COLUMNS" :rows="resultRowsList[idx]">
             <template #body-cell-position="{ value }">
               {{ value + 1 }}
             </template>
@@ -33,7 +33,10 @@ import { PROGRAMMED_SCHEDULE_COLUMNS } from '../constants/table.js';
 
 const store = useStore()
 const rounds = computed(() => store.state.rounds)
-const roundResults = computed(() => store.state.roundResults)
+const roundResults = computed(() => {
+  console.log("emre ", store.state.roundResults)
+  return store.state.roundResults
+})
 
 const programTitles = computed(() =>
   rounds.value.map((round, idx) => `${idx + 1}${getOrdinal(idx + 1)} Lap - ${round.distance}m`)
