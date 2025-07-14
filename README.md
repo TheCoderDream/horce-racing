@@ -65,7 +65,7 @@ horse-racing-game/
 
 1. **Clone the repository:**
    ```sh
-   git clone <repo-url>
+   git clone https://github.com/TheCoderDream/horce-racing.git
    cd horse-racing-game
    ```
 
