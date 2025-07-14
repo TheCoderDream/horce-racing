@@ -20,3 +20,6 @@ export const HORSE_NAMES = [
     'John von Neumann', 'Edsger Dijkstra', 'Jean Bartik', 'Mary Wilkes', 'Frances Allen', 'Radia Perlman',
     'Brian Kernighan', 'John McCarthy'
 ];
+
+export const TICK_MS = 100;
+export const INTER_ROUND_DELAY_MS = 1000;

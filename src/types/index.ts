@@ -18,7 +18,8 @@ export type RaceStatus = 'idle' | 'running' | 'paused' | 'finished';
 export interface IRootState {
   horses: IHorse[];
   rounds: IRound[];
-  currentRound: number;
-  results: IHorse[][];
+  currentRoundIndex: number;
+  roundResults: IHorse[][];
   raceStatus: RaceStatus;
+  timerId: any | null;
 } 

@@ -38,22 +38,23 @@ export function calculateHorseNewPosition(horse: IHorse): number {
   return Math.min(100, (horse.position ?? 0) + advance);
 }
 
-export function advanceHorsesRealTime(round: IRound, onPositionUpdate: (horseIndex: number, newPosition: number, finishedNow: boolean, finishTime?: number) => void, roundIndex: number, raceStartTime: number): boolean {
-  let finished = true;
-  round.horses.forEach((horse: IHorse, idx: number) => {
+export function calculateHorsesNextPosition(round: IRound, roundIndex: number, raceStartTime: number): Array<{ horseIndex: number, position: number, finishTime?: number }> {
+  return round.horses.map((horse: IHorse, idx: number) => {
     if ((horse.position ?? 0) < 100) {
       const newPosition = calculateHorseNewPosition(horse);
-      let finishedNow = false;
       let finishTime: number | undefined = undefined;
       if (newPosition >= 100 && horse.finishTime === undefined) {
-        finishedNow = true;
         finishTime = Date.now() - raceStartTime;
       }
-      onPositionUpdate(idx, newPosition, finishedNow, finishTime);
-      if (newPosition < 100) finished = false;
+      return { horseIndex: idx, position: newPosition, ...(finishTime !== undefined ? { finishTime } : {}) };
+    } else {
+      return { horseIndex: idx, position: horse.position ?? 0 };
     }
   });
-  return finished;
+}
+
+export function areAllHorsesFinished(round: IRound): boolean {
+  return round.horses.every(horse => (!!horse.finishTime));
 }
 
 export function getSortedHorsesByRanking(horses: IHorse[]): IHorse[] {

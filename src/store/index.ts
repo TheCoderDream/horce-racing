@@ -1,17 +1,32 @@
-import { createStore } from 'vuex';
+import { createStore, ActionContext } from 'vuex';
 import type { IHorse, IRound, IRootState, RaceStatus } from '../types/index.js';
-import { advanceHorsesRealTime, generateHorses, generateRounds, getSortedHorsesByRanking } from '../utils/index.js';
-import { LAP_LABELS } from '../constants/index';
+import { calculateHorsesNextPosition, generateHorses, generateRounds, getSortedHorsesByRanking, areAllHorsesFinished } from '../utils/index.js';
+import { LAP_LABELS, TICK_MS, INTER_ROUND_DELAY_MS } from '../constants/index';
 
+// Union type for mutation payloads
+export type StorePayload =
+  | { horses: IHorse[] }
+  | { rounds: IRound[] }
+  | { round: number }
+  | { roundIndex: number, raceStartTime: number }
+  | { results: IHorse[][] }
+  | { status: RaceStatus }
+  | { horseIndex: number, position: number, finishTime?: number }
+  | { roundIndex: number, result: IHorse[] }
+  | Array<{ horseIndex: number, position: number, finishTime?: number }>
+  | null;
+
+const state = (): IRootState => ({
+  horses: [],
+  rounds: [],
+  currentRoundIndex: 0,
+  roundResults: [],
+  raceStatus: 'idle',
+  timerId: null,
+});
 
 const storeOptions = {
-  state: {
-    horses: [],
-    rounds: [],
-    currentRound: 0,
-    results: [],
-    raceStatus: 'idle',
-  } as IRootState,
+  state: state(),
   mutations: {
     setHorses(state: IRootState, horses: IHorse[]) {
       state.horses = horses;
@@ -19,11 +34,11 @@ const storeOptions = {
     setRounds(state: IRootState, rounds: IRound[]) {
       state.rounds = rounds;
     },
-    setCurrentRound(state: IRootState, round: number) {
-      state.currentRound = round;
+    setCurrentRoundIndex(state: IRootState, round: number) {
+      state.currentRoundIndex = round;
     },
-    setResults(state: IRootState, results: IHorse[][]) {
-      state.results = results;
+    setRoundResults(state: IRootState, roundResults: IHorse[][]) {
+      state.roundResults = roundResults;
     },
     setRaceStatus(state: IRootState, status: RaceStatus) {
       state.raceStatus = status;
@@ -31,92 +46,112 @@ const storeOptions = {
     setRaceStartTime(state: IRootState, { roundIndex, raceStartTime }: { roundIndex: number, raceStartTime: number }) {
       state.rounds[roundIndex].raceStartTime = raceStartTime;
     },
-    updateHorsePosition(state: IRootState, { roundIndex, horseIndex, position, finishTime }: { roundIndex: number, horseIndex: number, position: number, finishTime?: number }) {
-      state.rounds[roundIndex].horses[horseIndex].position = position;
+    updateHorsePosition(state: IRootState, { horseIndex, position, finishTime }: { horseIndex: number, position: number, finishTime?: number }) {
+      state.rounds[state.currentRoundIndex].horses[horseIndex].position = position;
       if (finishTime !== undefined) {
-        state.rounds[roundIndex].horses[horseIndex].finishTime = finishTime;
+        state.rounds[state.currentRoundIndex].horses[horseIndex].finishTime = finishTime;
+      }
+    },
+    bulkUpdatePositions(state: IRootState, payloads: Array<{ horseIndex: number, position: number, finishTime?: number }>) {
+      for (const { horseIndex, position, finishTime } of payloads) {
+        state.rounds[state.currentRoundIndex].horses[horseIndex].position = position;
+        if (finishTime !== undefined) {
+          state.rounds[state.currentRoundIndex].horses[horseIndex].finishTime = finishTime;
+        }
       }
     },
     addRoundResult(state: IRootState, { roundIndex, result }: { roundIndex: number, result: IHorse[] }) {
-      state.results[roundIndex] = result;
+      state.roundResults[roundIndex] = result;
+    },
+    setTimerId(state: IRootState, timerId: any) {
+      state.timerId = timerId;
+    },
+    clearTimer(state: IRootState) {
+      if (state.timerId !== null) {
+        clearInterval(state.timerId);
+        state.timerId = null;
+      }
     },
     resetGame(state: IRootState) {
       state.horses = [];
       state.rounds = [];
-      state.currentRound = 0;
-      state.results = [];
+      state.currentRoundIndex = 0;
+      state.roundResults = [];
       state.raceStatus = 'idle';
+      this.clearTimer(state);
     }
   },
   actions: {
-    generateHorses({ commit }: { commit: Function }, count: number = 20) {
+    generateHorses({ commit }: ActionContext<IRootState, IRootState>, count: number = 20) {
       const horses = generateHorses(count);
       commit('setHorses', horses);
     },
-    generateRounds({ state, commit }: { state: IRootState; commit: Function }) {
+    generateRounds({ state, commit }: ActionContext<IRootState, IRootState>) {
       const rounds = generateRounds(state.horses);
       commit('setRounds', rounds);
-      commit('setResults', []);
-      commit('setCurrentRound', 0);
+      commit('setRoundResults', []);
+      commit('setCurrentRoundIndex', 0);
     },
-    startRace({ state, commit, dispatch }: { state: IRootState; commit: Function; dispatch: Function }) {
+    startRace({ state, commit, dispatch }: ActionContext<IRootState, IRootState>) {
       if (state.raceStatus === 'running') return;
       commit('setRaceStatus', 'running');
       dispatch('runCurrentRound');
     },
-    pauseRace({ commit }: { commit: Function }) {
+    pauseRace({ commit }: ActionContext<IRootState, IRootState>) {
       commit('setRaceStatus', 'paused');
+      commit('clearTimer');
     },
-    runCurrentRound({ state, commit, dispatch }: { state: IRootState; commit: Function; dispatch: Function }) {
-      if (!state.rounds[state.currentRound]) return;
-      // Set race start time for this round if not already set
-      if (!state.rounds[state.currentRound].raceStartTime) {
-        commit('setRaceStartTime', { roundIndex: state.currentRound, raceStartTime: Date.now() });
+    runCurrentRound({ state, commit, dispatch }: ActionContext<IRootState, IRootState>) {
+      if (!state.rounds[state.currentRoundIndex]) return;
+      if (!state.rounds[state.currentRoundIndex].raceStartTime) {
+        commit('setRaceStartTime', { roundIndex: state.currentRoundIndex, raceStartTime: Date.now() });
       }
-      const raceStartTime = state.rounds[state.currentRound].raceStartTime!;
-      let interval = setInterval(() => {
+      const raceStartTime = state.rounds[state.currentRoundIndex].raceStartTime!;
+      commit('clearTimer');
+      const interval = setInterval(() => {
         if (state.raceStatus !== 'running') {
-          clearInterval(interval);
+          commit('clearTimer');
           return;
         }
-        const round = state.rounds[state.currentRound];
-        const finished = advanceHorsesRealTime(
+        const round = state.rounds[state.currentRoundIndex];
+        const batchPayload = calculateHorsesNextPosition(
           round,
-          (horseIndex, newPosition, finishedNow, finishTime) => {
-            const payload: any = { roundIndex: state.currentRound, horseIndex, position: newPosition };
-            if (finishedNow && finishTime !== undefined) payload.finishTime = finishTime;
-            commit('updateHorsePosition', payload);
-          },
-          state.currentRound,
+          state.currentRoundIndex,
           raceStartTime
         );
-        if (finished) {
-          clearInterval(interval);
-          const result = getSortedHorsesByRanking(round.horses);
-          commit('addRoundResult', { roundIndex: state.currentRound, result });
-          if (state.currentRound < state.rounds.length - 1) {
-            commit('setCurrentRound', state.currentRound + 1);
-            setTimeout(() => {
-              if (state.raceStatus === 'running') {
-                dispatch('runCurrentRound');
-              }
-            }, 1000);
-          } else {
-            commit('setRaceStatus', 'finished');
-          }
+        commit('bulkUpdatePositions', batchPayload);
+        if (areAllHorsesFinished(round)) {
+          void dispatch('finalizeRound');
         }
-      }, 100);
+      }, TICK_MS);
+      commit('setTimerId', interval);
     },
-    generateAll({ dispatch, commit }: { dispatch: Function; commit: Function }) {
-      dispatch('generateHorses', 20);
-      dispatch('generateRounds');
+    finalizeRound({ state, commit, dispatch }: ActionContext<IRootState, IRootState>) {
+      commit('clearTimer');
+      const round = state.rounds[state.currentRoundIndex];
+      const result = getSortedHorsesByRanking(round.horses);
+      commit('addRoundResult', { roundIndex: state.currentRoundIndex, result });
+      if (state.currentRoundIndex < state.rounds.length - 1) {
+        commit('setCurrentRoundIndex', state.currentRoundIndex + 1);
+        setTimeout(() => {
+          if (state.raceStatus === 'running') {
+            void dispatch('runCurrentRound');
+          }
+        }, INTER_ROUND_DELAY_MS);
+      } else {
+        commit('setRaceStatus', 'finished');
+      }
+    },
+    generateAll({ dispatch, commit }: ActionContext<IRootState, IRootState>) {
+      void dispatch('generateHorses', 20);
+      void dispatch('generateRounds');
       commit('setRaceStatus', 'idle');
     },
-    toggleRace({ state, dispatch }: { state: IRootState; dispatch: Function }) {
+    toggleRace({ state, dispatch }: ActionContext<IRootState, IRootState>) {
       if (state.raceStatus === 'running') {
-        dispatch('pauseRace');
+        void dispatch('pauseRace');
       } else {
-        dispatch('startRace');
+        void dispatch('startRace');
       }
     },
   },
@@ -128,12 +163,18 @@ const storeOptions = {
       return 'Start';
     },
     lapLabel(state: IRootState): string {
-      return LAP_LABELS[state.currentRound] || '';
+      return LAP_LABELS[state.currentRoundIndex] || '';
     },
     currentHorses(state: IRootState): IHorse[] {
-      const round = state.rounds[state.currentRound];
+      const round = state.rounds[state.currentRoundIndex];
       return round ? round.horses : [];
     },
+    currentRound(state: IRootState): IRound {
+      return state.rounds[state.currentRoundIndex];
+    },
+    roundResults(state: IRootState): IHorse[][] {
+      return state.roundResults;
+    }
   }
 };
 

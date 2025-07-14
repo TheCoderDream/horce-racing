@@ -31,7 +31,7 @@ import BaseTable from './BaseTable.vue'
 import {getOrdinal} from "../utils/index.js";
 const store = useStore()
 const rounds = computed(() => store.state.rounds)
-const results = computed(() => store.state.results)
+const roundResults = computed(() => store.state.roundResults)
 const columns = [
   { name: 'position', label: 'Position', field: 'position', align: 'left', required: true },
   { name: 'name', label: 'Name', field: 'name', align: 'left' },
@@ -44,7 +44,7 @@ const programRowsList = computed(() =>
   rounds.value.map(round => round.horses.map((horse, idx) => ({ position: idx, name: horse.name })))
 )
 const resultRowsList = computed(() =>
-  results.value.map(result => result.map((horse, idx) => ({ position: idx, name: horse.name })))
+    roundResults.value.map(result => result.map((horse, idx) => ({ position: idx, name: horse.name })))
 )
 </script>
 
