@@ -5,7 +5,7 @@
       <div class="tables-row">
         <div class="program-table">
           <h3>{{ programTitles[idx] }}</h3>
-          <BaseTable :columns="columns" :rows="programRowsList[idx]">
+          <BaseTable :columns="PROGRAMMED_SCHEDULE_COLUMNS" :rows="programRowsList[idx]">
             <template #body-cell-position="{ value }">
               {{ value + 1 }}
             </template>
@@ -29,13 +29,11 @@ import { computed } from 'vue'
 import { useStore } from 'vuex'
 import BaseTable from './BaseTable.vue'
 import {getOrdinal} from "../utils/index.js";
+import { PROGRAMMED_SCHEDULE_COLUMNS } from '../constants/table.js';
+
 const store = useStore()
 const rounds = computed(() => store.state.rounds)
 const roundResults = computed(() => store.state.roundResults)
-const columns = [
-  { name: 'position', label: 'Position', field: 'position', align: 'left', required: true },
-  { name: 'name', label: 'Name', field: 'name', align: 'left' },
-]
 
 const programTitles = computed(() =>
   rounds.value.map((round, idx) => `${idx + 1}${getOrdinal(idx + 1)} Lap - ${round.distance}m`)
