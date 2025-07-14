@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import Lane from '../components/race-track/Lane.vue';
-import Horse from '../components/race-track/Horse.vue';
+import Lane from '../../components/race-track/Lane.vue';
+import Horse from '../../components/race-track/Horse.vue';
 
 describe('Lane.vue', () => {
   const horse = { id: 1, name: 'Thunder', color: '#ff0000', position: 42, condition: 80 };

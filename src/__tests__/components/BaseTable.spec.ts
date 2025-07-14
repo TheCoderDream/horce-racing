@@ -1,7 +1,7 @@
 import { h } from 'vue';
 import { describe, it, expect } from 'vitest';
 import { shallowMount, mount } from '@vue/test-utils';
-import BaseTable from '../components/BaseTable.vue';
+import BaseTable from '../../components/BaseTable.vue';
 
 const columns = [
   { name: 'name', label: 'Name', field: 'name' },

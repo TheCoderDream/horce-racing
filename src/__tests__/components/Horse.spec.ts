@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import Horse from '../components/race-track/Horse.vue';
-import HorseIcon from '../components/race-track/HorseIcon.vue';
+import Horse from '../../components/race-track/Horse.vue';
+import HorseIcon from '../../components/race-track/HorseIcon.vue';
 
 describe('Horse.vue', () => {
   const color = '#ff0000';

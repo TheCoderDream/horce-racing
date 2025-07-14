@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import ProgramSchedule from '../components/ProgramSchedule.vue';
-import BaseTable from '../components/BaseTable.vue';
+import ProgramSchedule from '../../components/ProgramSchedule.vue';
+import BaseTable from '../../components/BaseTable.vue';
 import { createStore } from 'vuex';
 import { nextTick } from 'vue';
 

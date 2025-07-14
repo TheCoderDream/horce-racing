@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import RaceTrack from '../components/race-track/RaceTrack.vue';
-import Lane from '../components/race-track/Lane.vue';
+import RaceTrack from '../../components/race-track/RaceTrack.vue';
+import Lane from '../../components/race-track/Lane.vue';
 import { createStore } from 'vuex';
 import { nextTick } from 'vue';
 
