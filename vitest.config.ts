@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     exclude: [
-      'src/__tests__/e2e/**',
+      'src/e2e/**',
       'e2e/**',
       'tests/e2e/**',
       '**/playwright/**',
